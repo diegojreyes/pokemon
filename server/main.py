@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from redis import Redis
 import httpx
 import asyncio
@@ -11,7 +12,7 @@ async def lifespan(app: FastAPI):
     app.state.redis = Redis(host="localhost", port=6379)
     app.state.client = httpx.AsyncClient(
         timeout=60.0,  
-        limits=httpx.Limits(max_keepalive_connections=5, max_connections=15)
+        limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
     )
     yield
     # Shutdown
@@ -19,6 +20,15 @@ async def lifespan(app: FastAPI):
     app.state.redis.close()
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", 
+                   "http://127.0.0.1:5173",
+                   ],  # Add 127.0.0.1
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 @app.get("/pokemon")
 async def get_pokemon():
@@ -31,8 +41,8 @@ async def get_pokemon():
             return response.json()
 
     if not res:
-        semaphore = asyncio.Semaphore(5)  
-        tasks = [create_task(str(i), semaphore) for i in range(1, 151)] 
+        semaphore = asyncio.Semaphore(3)  
+        tasks = [create_task(str(i), semaphore) for i in range(1, 152)]  # Fetch 20 Pokemon
         res = await asyncio.gather(*tasks)
         app.state.redis.set("pokemon", json.dumps(res))
         return res
