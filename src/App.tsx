@@ -74,10 +74,10 @@ function App() {
       </main>
 
       {/* Sidebar - fixed width, sits on the right */}
-      <aside className="w-80 bg-[#f7f7f8] border-l border-gray-200 flex flex-col h-screen overflow-y-auto sticky top-0">
+      <aside className="w-1/5 bg-red-400 border-l border-gray-200 flex flex-col h-screen overflow-y-auto sticky top-0">
         <input type="text" value={query} onChange={(e) => setQuery(e.currentTarget.value)}/>
         {filteredMons.map((pokemon) => (
-          <div key={pokemon.id} className="m-5 p-4 border border-gray-300 rounded-lg bg-white shadow-sm">
+          <div key={pokemon.id} className="m-5 p-4 border border-gray-300 rounded-lg bg-yellow-200 shadow-sm">
             <h2 className="font-bold text-lg text-center mb-2">{pokemon.name.toUpperCase()}</h2>
             <div className="flex justify-center bg-gray-50 rounded-md mb-2">
               <img src={pokemon.randomSprite} alt={pokemon.name} className="w-24 h-24 object-contain" />
