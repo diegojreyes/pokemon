@@ -6,24 +6,23 @@ from database import engine, session_local, get_db
 from typing import Annotated
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
-import httpx
 import asyncio
-import json
+import json  
+import os    
+import httpx 
 import models
 
-# Add this line to create the tables in the database
 models.Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    app.state.redis = Redis(host="localhost", port=6379)
-    app.state.client = httpx.AsyncClient(
-        timeout=60.0,  
-        limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
-    )
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+    app.state.redis = Redis.from_url(redis_url, decode_responses=True)
+    
+    app.state.client = httpx.AsyncClient()
+    
     yield
-    # Shutdown
+    
     await app.state.client.aclose()
     app.state.redis.close()
 
@@ -61,24 +60,31 @@ async def get_pokemon():
 
 @app.get("/simple")
 def get_simple(db: db_dep):
-    res = app.state.redis.get("simple")
-    if not res:
-        data = db.query(models.Pokemon).all()
-        app.state.redis.set("simple", json.dumps(jsonable_encoder(data)))
-        return data
-    return json.loads(res)
+    try:
+        res = app.state.redis.get("simple")
+        if res:
+            return json.loads(res)
+    except Exception as e:
+        print(f"Redis connection failed (skipping cache): {e}")
+
+    data = db.query(models.Pokemon).all()
+    encoded_data = jsonable_encoder(data)
+    
+    try:
+        app.state.redis.set("simple", json.dumps(encoded_data))
+    except Exception as e:
+        print(f"Could not save to Redis: {e}")
+    
+    return encoded_data
     
 @app.post("/pokemon")
 def upload(pokemon: models.Pokemon_Base, db: db_dep):
     try:
-        # Assuming your DB model is named Pokemon
         db_pokemon = models.Pokemon(**pokemon.model_dump()) 
         db.add(db_pokemon)
         db.commit()
         db.refresh(db_pokemon)
         return db_pokemon
     except Exception as e:
-        # This prints the error to your terminal
         print(f"SERVER ERROR: {e}") 
-        # This sends the specific error back to Swagger UI
         raise HTTPException(status_code=500, detail=str(e))
