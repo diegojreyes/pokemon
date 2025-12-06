@@ -7,7 +7,7 @@ from typing import Annotated
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 import asyncio
-import json  
+import json
 import os    
 import httpx 
 import models
