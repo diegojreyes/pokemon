@@ -61,21 +61,8 @@ async def get_pokemon():
 
 @app.get("/simple")
 def get_simple(db: db_dep):
-    try:
-        res = app.state.redis.get("simple")
-        if res:
-            return json.loads(res)
-    except Exception as e:
-        print(f"Redis connection failed (skipping cache): {e}")
-
     data = db.query(models.Pokemon).all()
     encoded_data = jsonable_encoder(data)
-    
-    try:
-        app.state.redis.set("simple", json.dumps(encoded_data))
-    except Exception as e:
-        print(f"Could not save to Redis: {e}")
-    
     return encoded_data
     
 @app.post("/pokemon")
