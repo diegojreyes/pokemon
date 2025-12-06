@@ -75,7 +75,7 @@ function App() {
       </main>
 
       {/* Sidebar */}
-      <aside className="w-80 bg-white border-l-4 border-red-700 flex flex-col h-full shadow-2xl z-10">
+      <aside className="w-3/12 bg-white border-l-4 border-red-700 flex flex-col h-full shadow-2xl z-10">
         {/* Red Pokedex Header */}
         <div className="p-5 bg-red-600 sticky top-0 z-10 shadow-md">
           <h2 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
